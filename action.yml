@@ -11,12 +11,22 @@ inputs:
     description: Model path inside the repository when using git refs.
     required: false
     default: model
+  base:
+    description: Base model directory. Provide with head for directory comparison.
+    required: false
+    default: ""
+  head:
+    description: Head model directory. Provide with base for directory comparison.
+    required: false
+    default: ""
   base-ref:
     description: Base git ref to compare.
-    required: true
+    required: false
+    default: ""
   head-ref:
     description: Head git ref to compare.
-    required: true
+    required: false
+    default: ""
   fail-on:
     description: Policy that fails CI. Use breaking, risky, or never.
     required: false
@@ -50,13 +60,20 @@ runs:
       shell: bash
       run: |
         set +e
-        "$RUNNER_TEMP/semci" diff \
-          --layer "${{ inputs.layer }}" \
-          --base-ref "${{ inputs.base-ref }}" \
-          --head-ref "${{ inputs.head-ref }}" \
-          --model-path "${{ inputs.model-path }}" \
-          --fail-on "${{ inputs.fail-on }}" \
+        args=(
+          diff
+          --layer "${{ inputs.layer }}"
+          --fail-on "${{ inputs.fail-on }}"
           --report-output "${{ inputs.report-output }}"
+        )
+
+        if [[ -n "${{ inputs.base }}" || -n "${{ inputs.head }}" ]]; then
+          args+=(--base "${{ inputs.base }}" --head "${{ inputs.head }}")
+        else
+          args+=(--base-ref "${{ inputs.base-ref }}" --head-ref "${{ inputs.head-ref }}" --model-path "${{ inputs.model-path }}")
+        fi
+
+        "$RUNNER_TEMP/semci" "${args[@]}"
         status=$?
         echo "exit_code=$status" >> "$GITHUB_OUTPUT"
         if [[ -f "${{ inputs.report-output }}" ]]; then
