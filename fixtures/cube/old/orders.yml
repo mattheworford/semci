@@ -1,0 +1,35 @@
+cubes:
+  - name: orders
+    sql: SELECT * FROM public.orders
+
+    joins:
+      - name: customers
+        sql: "{CUBE}.customer_id = {customers}.id"
+        relationship: many_to_one
+
+    measures:
+      - name: total_revenue
+        sql: amount
+        type: sum
+        title: Total Revenue
+
+      - name: order_count
+        type: count
+
+      - name: gross_margin
+        sql: margin
+        type: avg
+
+    dimensions:
+      - name: id
+        sql: id
+        type: number
+        primary_key: true
+
+      - name: status
+        sql: status
+        type: string
+
+    segments:
+      - name: completed
+        sql: "{CUBE}.status = 'completed'"

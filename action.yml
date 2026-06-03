@@ -1,0 +1,93 @@
+name: SemCI
+description: CI for semantic layers. Catch broken metrics and risky joins before they ship.
+author: mattheworford
+
+inputs:
+  layer:
+    description: Semantic layer adapter. SemCI v1 supports cube.
+    required: false
+    default: cube
+  model-path:
+    description: Model path inside the repository when using git refs.
+    required: false
+    default: model
+  base-ref:
+    description: Base git ref to compare.
+    required: true
+  head-ref:
+    description: Head git ref to compare.
+    required: true
+  fail-on:
+    description: Policy that fails CI. Use breaking, risky, or never.
+    required: false
+    default: breaking
+  report-output:
+    description: Path for the Markdown report.
+    required: false
+    default: semci-report.md
+  github-token:
+    description: GitHub token used to post or update a PR comment.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: "1.24.x"
+
+    - name: Build SemCI
+      shell: bash
+      run: |
+        set -euo pipefail
+        cd "$GITHUB_ACTION_PATH"
+        go build -o "$RUNNER_TEMP/semci" ./cmd/semci
+
+    - name: Run SemCI
+      id: semci
+      shell: bash
+      run: |
+        set +e
+        "$RUNNER_TEMP/semci" diff \
+          --layer "${{ inputs.layer }}" \
+          --base-ref "${{ inputs.base-ref }}" \
+          --head-ref "${{ inputs.head-ref }}" \
+          --model-path "${{ inputs.model-path }}" \
+          --fail-on "${{ inputs.fail-on }}" \
+          --report-output "${{ inputs.report-output }}"
+        status=$?
+        echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+        if [[ -f "${{ inputs.report-output }}" ]]; then
+          cat "${{ inputs.report-output }}" >> "$GITHUB_STEP_SUMMARY"
+        fi
+        exit 0
+
+    - name: Comment on PR
+      if: ${{ inputs.github-token != '' && github.event_name == 'pull_request' }}
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const fs = require('fs');
+          const marker = '<!-- semci-report -->';
+          const reportPath = '${{ inputs.report-output }}';
+          if (!fs.existsSync(reportPath)) {
+            core.info(`SemCI report not found at ${reportPath}; skipping PR comment.`);
+            return;
+          }
+          const body = fs.readFileSync(reportPath, 'utf8');
+          const { owner, repo } = context.repo;
+          const issue_number = context.payload.pull_request.number;
+          const comments = await github.rest.issues.listComments({ owner, repo, issue_number, per_page: 100 });
+          const existing = comments.data.find((comment) => comment.body && comment.body.includes(marker));
+          if (existing) {
+            await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+          } else {
+            await github.rest.issues.createComment({ owner, repo, issue_number, body });
+          }
+
+    - name: Enforce SemCI policy
+      shell: bash
+      run: exit "${{ steps.semci.outputs.exit_code }}"

@@ -1,0 +1,5 @@
+.cache/
+semci-report.md
+/semci
+dist/
+bin/
