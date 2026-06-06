@@ -22,6 +22,12 @@ func TestParseDirParsesCubeYAML(t *testing.T) {
 	if orders.Joins["customers"].Relationship != "many_to_one" {
 		t.Fatalf("expected many_to_one relationship, got %q", orders.Joins["customers"].Relationship)
 	}
+	if orders.Measures["total_revenue"].Source.Path == "" {
+		t.Fatal("expected measure source path")
+	}
+	if orders.Measures["total_revenue"].Source.Line == 0 {
+		t.Fatal("expected measure source line")
+	}
 }
 
 func TestParseDirReportsUnsupportedJSTSFiles(t *testing.T) {
@@ -59,6 +65,21 @@ cubes:
 	filters := model.Cubes["orders"].Measures["total_revenue"].Filters
 	if got := filters[0].Values[0]; got != "paid" {
 		t.Fatalf("expected sorted filter values, got %q", got)
+	}
+}
+
+func TestParseDirWithSourcePrefixUsesRepoRelativePaths(t *testing.T) {
+	model, err := ParseDirWithSourcePrefix("../../fixtures/cube/new", "model")
+	if err != nil {
+		t.Fatalf("ParseDir returned error: %v", err)
+	}
+
+	location := model.Cubes["orders"].Measures["total_revenue"].Source
+	if location.Path != "model/orders.yml" {
+		t.Fatalf("expected prefixed source path, got %q", location.Path)
+	}
+	if location.Line == 0 {
+		t.Fatal("expected source line")
 	}
 }
 

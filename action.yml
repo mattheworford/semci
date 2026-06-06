@@ -35,6 +35,10 @@ inputs:
     description: Path for the Markdown report.
     required: false
     default: semci-report.md
+  github-annotations:
+    description: Emit GitHub Actions annotations for semantic findings.
+    required: false
+    default: "true"
   github-token:
     description: GitHub token used to post or update a PR comment.
     required: false
@@ -66,6 +70,10 @@ runs:
           --fail-on "${{ inputs.fail-on }}"
           --report-output "${{ inputs.report-output }}"
         )
+
+        if [[ "${{ inputs.github-annotations }}" == "true" ]]; then
+          args+=(--github-annotations)
+        fi
 
         if [[ -n "${{ inputs.base }}" || -n "${{ inputs.head }}" ]]; then
           args+=(--base "${{ inputs.base }}" --head "${{ inputs.head }}")

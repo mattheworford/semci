@@ -42,6 +42,28 @@ func TestCompareClassifiesChangedJoinSQLAsRisky(t *testing.T) {
 	assertFinding(t, result, SeverityRisky, "orders -> customers", "changed join SQL")
 }
 
+func TestCompareUsesHeadLocationForChangedObjects(t *testing.T) {
+	base := modelWithMeasure("orders", "total_revenue", "amount")
+	head := modelWithMeasure("orders", "total_revenue", "amount * exchange_rate")
+	c := head.Cubes["orders"]
+	measure := c.Measures["total_revenue"]
+	measure.Source = cube.SourceLocation{Path: "model/orders.yml", Line: 7}
+	c.Measures["total_revenue"] = measure
+	head.Cubes["orders"] = c
+
+	result := Compare(base, head)
+
+	for _, finding := range result.Findings {
+		if finding.ID == "orders.total_revenue" && finding.Change == "changed measure SQL" {
+			if finding.Location.Path != "model/orders.yml" || finding.Location.Line != 7 {
+				t.Fatalf("expected head location, got %#v", finding.Location)
+			}
+			return
+		}
+	}
+	t.Fatalf("missing changed measure finding in %#v", result.Findings)
+}
+
 func TestCompareFormattingOnlyProducesNoFindings(t *testing.T) {
 	base := modelWithMeasure("orders", "total_revenue", "amount")
 	head := modelWithMeasure("orders", "total_revenue", "amount")

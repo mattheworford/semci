@@ -5,9 +5,15 @@ type Model struct {
 	Unsupported []UnsupportedFile
 }
 
+type SourceLocation struct {
+	Path string `json:"path,omitempty"`
+	Line int    `json:"line,omitempty"`
+}
+
 type UnsupportedFile struct {
-	Path   string
-	Reason string
+	Path   string `json:"path"`
+	Line   int    `json:"line,omitempty"`
+	Reason string `json:"reason"`
 }
 
 type Cube struct {
@@ -21,45 +27,51 @@ type Cube struct {
 	Segments        map[string]Segment
 	Joins           map[string]Join
 	PreAggregations map[string]PreAggregation
+	Source          SourceLocation `yaml:"-"`
 }
 
 type Measure struct {
-	Name        string   `yaml:"name"`
-	SQL         string   `yaml:"sql"`
-	Type        string   `yaml:"type"`
-	Title       string   `yaml:"title"`
-	Description string   `yaml:"description"`
-	Filters     []Filter `yaml:"filters"`
-	Public      any      `yaml:"public"`
+	Name        string         `yaml:"name"`
+	SQL         string         `yaml:"sql"`
+	Type        string         `yaml:"type"`
+	Title       string         `yaml:"title"`
+	Description string         `yaml:"description"`
+	Filters     []Filter       `yaml:"filters"`
+	Public      any            `yaml:"public"`
+	Source      SourceLocation `yaml:"-"`
 }
 
 type Dimension struct {
-	Name        string `yaml:"name"`
-	SQL         string `yaml:"sql"`
-	Type        string `yaml:"type"`
-	Title       string `yaml:"title"`
-	Description string `yaml:"description"`
-	Public      any    `yaml:"public"`
+	Name        string         `yaml:"name"`
+	SQL         string         `yaml:"sql"`
+	Type        string         `yaml:"type"`
+	Title       string         `yaml:"title"`
+	Description string         `yaml:"description"`
+	Public      any            `yaml:"public"`
+	Source      SourceLocation `yaml:"-"`
 }
 
 type Segment struct {
-	Name        string `yaml:"name"`
-	SQL         string `yaml:"sql"`
-	Title       string `yaml:"title"`
-	Description string `yaml:"description"`
-	Public      any    `yaml:"public"`
+	Name        string         `yaml:"name"`
+	SQL         string         `yaml:"sql"`
+	Title       string         `yaml:"title"`
+	Description string         `yaml:"description"`
+	Public      any            `yaml:"public"`
+	Source      SourceLocation `yaml:"-"`
 }
 
 type Join struct {
-	Name         string `yaml:"name"`
-	SQL          string `yaml:"sql"`
-	Relationship string `yaml:"relationship"`
-	Type         string `yaml:"type"`
+	Name         string         `yaml:"name"`
+	SQL          string         `yaml:"sql"`
+	Relationship string         `yaml:"relationship"`
+	Type         string         `yaml:"type"`
+	Source       SourceLocation `yaml:"-"`
 }
 
 type PreAggregation struct {
-	Name string `yaml:"name"`
-	Type string `yaml:"type"`
+	Name   string         `yaml:"name"`
+	Type   string         `yaml:"type"`
+	Source SourceLocation `yaml:"-"`
 }
 
 type Filter struct {

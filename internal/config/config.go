@@ -8,11 +8,12 @@ import (
 )
 
 const (
-	DefaultLayer        = "cube"
-	DefaultModelPath    = "model"
-	DefaultFailOn       = "breaking"
-	DefaultReportFormat = "markdown"
-	DefaultReportOutput = "semci-report.md"
+	DefaultLayer             = "cube"
+	DefaultModelPath         = "model"
+	DefaultFailOn            = "breaking"
+	DefaultReportFormat      = "markdown"
+	DefaultReportOutput      = "semci-report.md"
+	DefaultGitHubAnnotations = false
 )
 
 type Config struct {
@@ -29,7 +30,8 @@ type ReportConfig struct {
 }
 
 type GitHubConfig struct {
-	Comment bool `yaml:"comment"`
+	Comment     bool `yaml:"comment"`
+	Annotations bool `yaml:"annotations"`
 }
 
 func Defaults() Config {
@@ -41,7 +43,10 @@ func Defaults() Config {
 			Format: DefaultReportFormat,
 			Output: DefaultReportOutput,
 		},
-		GitHub: GitHubConfig{Comment: true},
+		GitHub: GitHubConfig{
+			Comment:     true,
+			Annotations: DefaultGitHubAnnotations,
+		},
 	}
 }
 

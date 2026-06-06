@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -73,5 +74,33 @@ report:
 	}
 	if _, err := os.Stat(reportPath); err != nil {
 		t.Fatalf("expected overridden report path to exist: %v", err)
+	}
+}
+
+func TestDiffCommandWritesJSONReport(t *testing.T) {
+	reportPath := filepath.Join(t.TempDir(), "report.json")
+	cmd := NewRootCommand()
+	cmd.SetArgs([]string{
+		"diff",
+		"--base", "../../fixtures/cube/old",
+		"--head", "../../fixtures/cube/new",
+		"--fail-on", "never",
+		"--report-format", "json",
+		"--report-output", reportPath,
+	})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("expected JSON report command to pass: %v", err)
+	}
+	report, err := os.ReadFile(reportPath)
+	if err != nil {
+		t.Fatalf("expected report to be written: %v", err)
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(report, &payload); err != nil {
+		t.Fatalf("expected JSON report, got error %v:\n%s", err, report)
+	}
+	if _, ok := payload["summary"].(map[string]any); !ok {
+		t.Fatalf("expected summary object, got %#v", payload)
 	}
 }

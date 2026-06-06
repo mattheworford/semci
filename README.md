@@ -2,7 +2,7 @@
 
 CI for semantic layers. Catch broken metrics and risky joins before they ship.
 
-SemCI compares two Cube semantic model versions, classifies semantic changes, and writes a PR-ready Markdown report.
+SemCI compares two Cube semantic model versions, classifies semantic changes, and writes a PR-ready Markdown or JSON report.
 
 ```text
 This PR changes total revenue.
@@ -41,6 +41,18 @@ Compare two git refs using a model path:
 semci diff --layer cube --base-ref main --head-ref HEAD --model-path model
 ```
 
+Write machine-readable JSON:
+
+```bash
+semci diff --layer cube --base fixtures/cube/old --head fixtures/cube/new --report-format json --report-output semci-report.json
+```
+
+Emit GitHub Actions annotations:
+
+```bash
+semci diff --layer cube --base-ref main --head-ref HEAD --model-path model --github-annotations
+```
+
 Use a config file:
 
 ```yaml
@@ -52,6 +64,7 @@ report:
   output: semci-report.md
 github:
   comment: true
+  annotations: true
 ```
 
 ```bash
@@ -84,10 +97,13 @@ jobs:
           base-ref: main
           head-ref: ${{ github.sha }}
           fail-on: breaking
+          github-annotations: "true"
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 SemCI exits nonzero only when the configured policy is met. The default is `breaking`, so risky changes are reported but do not block CI.
+
+The GitHub Action emits annotations by default. Breaking changes are errors, risky changes are warnings, and safe changes are notices.
 
 ## What SemCI V1 Supports
 
